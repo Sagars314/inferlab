@@ -1,11 +1,25 @@
-Package: inferLab
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("Sagar", "S", , "sagars314@proton.me", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Package: inferlab
+Type: Package
+Title: Statistical Inference Tools for Estimation, Testing, and Information
+Version: 0.1.0
+Authors@R: person("Sagar", "S", email = "sagars314@proton.me", role = c("aut", "cre"))
+Description: A toolkit for classical statistical inference based on the
+    MTH418 curriculum. Provides functions for exponential families,
+    sufficient statistics, completeness, unbiased estimation via
+    Rao-Blackwell and Lehmann-Scheffe methods, information inequalities
+    such as Cramer-Rao and Bhattacharyya bounds, estimation methods
+    including method of moments and minimum mean square error, hypothesis
+    testing procedures such as Neyman-Pearson, UMP, UMPU, and likelihood
+    ratio tests, and confidence intervals including UMA, UMAU, and
+    shortest-length intervals.
+License: MIT + file LICENSE
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
+LazyData: true
 RoxygenNote: 7.3.3
+Imports:stats
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Depends: R (>= 4.0.0)

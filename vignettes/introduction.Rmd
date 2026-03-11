@@ -1,0 +1,202 @@
+---
+title: "Introduction to inferlab: Statistical Inference Toolkit"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to inferlab}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "#>")
+library(inferlab)
+```
+
+# Overview
+
+The `inferlab` package implements the full MTH418 curriculum in classical
+statistical inference. It provides tools for:
+
+1. **Exponential Families** — canonical forms and sufficient statistics
+2. **Sufficiency** — Neyman-Fisher factorization, minimal sufficiency
+3. **Completeness** — Basu's theorem, Rao-Blackwell improvement
+4. **UMVUE Estimation** — Lehmann-Scheffé, Hoeffding U-statistics
+5. **Information Inequalities** — Cramér-Rao, Bhattacharyya bounds
+6. **Methods of Estimation** — MOM, MinMSE
+7. **Hypothesis Testing** — N-P Lemma, UMP, UMPU, LRT
+8. **Confidence Intervals** — UMA, UMAU, shortest-length
+
+---
+
+## 1. Exponential Families
+
+```r
+# Create an exponential family object
+ef_pois <- exponential_family("poisson")
+print(ef_pois)
+
+ef_norm <- exponential_family("normal", param = list(sigma = 2))
+summary(ef_norm, theta_vals = c(-2, 0, 2))
+
+# Check full rank
+check_full_rank(ef_norm, theta_range = seq(-3, 3, by = 0.5))
+```
+
+---
+
+## 2. Sufficient Statistics
+
+```r
+set.seed(42)
+x <- rpois(20, lambda = 3)
+
+# Sufficient statistic for Poisson
+sufficient_statistic("poisson", data = x)
+
+# For normal (both parameters unknown)
+y <- rnorm(25, mean = 2, sd = 1.5)
+sufficient_statistic("normal_both", data = y)
+```
+
+---
+
+## 3. Completeness and Basu's Theorem
+
+```r
+# Completeness check for Poisson
+rfn <- function(n, theta) rpois(n, lambda = theta)
+stat_fn <- function(x) sum(x)
+completeness_check(stat_fn, rfn, theta_vals = c(1, 2, 4), n = 15)
+
+# Basu's theorem: X_bar (complete sufficient) is independent of Range (ancillary)
+rfn_norm <- function(n, theta) rnorm(n, mean = theta, sd = 1)
+basu_theorem_demo(rfn_norm,
+                  suff_fn = function(x) mean(x),
+                  anc_fn  = function(x) diff(range(x)),
+                  theta = 3, n = 10, B = 2000)
+```
+
+---
+
+## 4. UMVUE Estimation
+
+```r
+x <- rnorm(25, mean = 3, sd = 1)
+
+# UMVUE for normal mean and variance
+umvue_normal_mean(x, sigma = 1)
+umvue_normal_variance(x)
+
+# UMVUE for Poisson
+x_pois <- rpois(20, lambda = 2)
+umvue_poisson(x_pois, estimand = "lambda")
+umvue_poisson(x_pois, estimand = "prob_zero")
+
+# Lehmann-Scheffe theorem
+lehmann_scheffe(x, family = "normal_mean")
+
+# Hoeffding's U-statistic for variance (m=2 kernel)
+kernel_var <- function(x1, x2) (x1 - x2)^2 / 2
+hoeffding_u_stat(x, kernel_fn = kernel_var, m = 2, estimand = "sigma^2")
+```
+
+---
+
+## 5. Cramér-Rao Lower Bound
+
+```r
+# Fisher information
+fisher_information("normal_mean", theta = 2, param = list(sigma = 1))
+fisher_information("poisson", theta = 3)
+
+# CRB for estimating mu in N(mu, 1) with n=25
+cramer_rao_bound("normal_mean", theta = 2, n = 25, g_deriv = 1,
+                 param = list(sigma = 1))
+
+# CRB for estimating e^{-lambda} in Poisson
+cramer_rao_bound("poisson", theta = 2, n = 20,
+                 g_deriv = function(th) -exp(-th))
+
+# Fisher information matrix for Normal(mu, sigma^2)
+fisher_information_matrix("normal", theta = c(mu = 2, sigma2 = 4))
+```
+
+---
+
+## 6. Method of Moments
+
+```r
+x_gamma <- rgamma(50, shape = 2, rate = 3)
+mome(x_gamma, family = "gamma")
+
+x_beta <- rbeta(40, shape1 = 2, shape2 = 5)
+mome(x_beta, family = "beta")
+```
+
+---
+
+## 7. Hypothesis Testing
+
+```r
+set.seed(1)
+x <- rpois(20, lambda = 3.5)
+
+# Neyman-Pearson most powerful test
+np_lemma(x, "poisson", theta0 = 2, theta1 = 5, alpha = 0.05)
+
+# UMP test (one-sided)
+ump_test(x, "poisson", theta0 = 2, alternative = "greater",
+         alpha = 0.05, theta_seq = seq(0.5, 7, by = 0.25))
+
+# UMPU test (two-sided)
+umpu_test(x, "poisson", theta0 = 2, alpha = 0.05)
+
+# Likelihood Ratio Test
+lrt(x, "poisson", theta0 = 2, alpha = 0.05)
+
+# Power function plot
+x_norm <- rnorm(25, mean = 1.5, sd = 1)
+power_function(x_norm, "normal_mean", theta0 = 0,
+               theta_seq = seq(-2, 4, by = 0.1),
+               param = list(sigma = 1), plot = TRUE)
+```
+
+---
+
+## 8. Confidence Intervals
+
+```r
+x_exp <- rexp(25, rate = 1.5)
+
+# Pivot-based CI
+pivot_ci(x_exp, family = "exponential", conf_level = 0.95)
+
+# Shortest expected length CI
+shortest_ci(x_exp, family = "exponential", conf_level = 0.95)
+
+# UMA CI (one-sided)
+uma_ci(x_exp, family = "exponential", conf_level = 0.95, side = "upper")
+
+# UMAU CI (two-sided, inverting UMPU test)
+umau_ci(x_exp, family = "exponential", conf_level = 0.95)
+
+# Poisson CI
+x_pois <- rpois(20, lambda = 3)
+umau_ci(x_pois, family = "poisson", conf_level = 0.95)
+```
+
+---
+
+## Reference Theorems Implemented
+
+| Theorem | Function |
+|---------|----------|
+| Neyman-Fisher Factorization | `neyman_fisher_factorization()` |
+| Basu's Theorem | `basu_theorem_demo()` |
+| Rao-Blackwell | `rao_blackwell()` |
+| Lehmann-Scheffé | `lehmann_scheffe()` |
+| Cramér-Rao | `cramer_rao_bound()` |
+| Hammersley-Chapman-Robbins | `hcr_bound()` |
+| Bhattacharyya | `bhattacharyya_bounds()` |
+| Neyman-Pearson | `np_lemma()` |
+| Wilks (LRT) | `lrt()` |
